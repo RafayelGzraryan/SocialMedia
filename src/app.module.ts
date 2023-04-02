@@ -19,13 +19,7 @@ import { dataSourceOptions } from '../common/database/data-source';
             isGlobal: true,
         }),
         TypeOrmModule.forRoot({
-            type: 'postgres',
-            host: 'localhost',
-            port: 5432,
-            username: 'post_platform',
-            password: 'root',
-            database: 'post_platform',
-            entities: ['dist/**/*.entity.{js,ts}'],
+            ...dataSourceOptions,
         }),
     ],
 })

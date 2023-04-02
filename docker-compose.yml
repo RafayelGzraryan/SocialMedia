@@ -1,0 +1,29 @@
+version: "3.9"
+
+networks:
+  shared:
+volumes:
+  postgres:
+
+services:
+  postgres:
+    image: postgres:14.2
+    restart: always
+    environment:
+      - POSTGRES_USER=post_platform
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DATABASE=post_platform
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - shared
+  rabbitmq:
+    image: rabbitmq:3.11.4-management-alpine
+    restart: always
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - shared

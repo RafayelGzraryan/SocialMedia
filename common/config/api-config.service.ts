@@ -24,7 +24,9 @@ export class ApiConfigService {
     bucketName: process.env.ASW_BUCKET_NAME,
     region: process.env.AWS_REGION,
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    expires: parseInt(process.env.AWS_EXPIRES),
+    signatureVersion: process.env.AWS_SIGNATURE_VERSION
   }
 
   port: number = parseInt(process.env.API_PORT);

@@ -87,7 +87,7 @@ export class UsersController {
         description: 'Update User Fields',
     })
     @Patch(':id')
-    update(
+    updateUser(
         @Param('id') id: string,
         @Body() updateUserDto: UpdateUserDto,
         @Req() req,
@@ -106,7 +106,7 @@ export class UsersController {
     })
     @UserRoles(Role.Admin)
     @Delete(':id')
-    remove(@Param('id') id: string): Promise<UserResponseDto> {
+    removeUser(@Param('id') id: string): Promise<UserResponseDto> {
         return this.usersService.remove(parseInt(id));
     }
 }

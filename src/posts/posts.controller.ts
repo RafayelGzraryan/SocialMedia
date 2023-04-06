@@ -60,7 +60,7 @@ export class PostsController {
         type: CreatePostDto,
         description: 'Create Post Fields',
     })
-    @Post()
+    @Post('/')
     async createPost(
         @Body() body: CreatePostDto,
         @UploadedFile(fileValidationPipe('image/jpeg')) file: Express.Multer.File,
@@ -78,7 +78,7 @@ export class PostsController {
     @ApiQuery({ name: 'limit', type: 'number', required: false })
     @ApiQuery({ name: 'order', enum: Order, required: false, example: 'ASC' })
     @ApiQuery({ name: 'condition', enum: OrderCondition, required: false, example: 'ID' })
-    @Get()
+    @Get('/')
     async findAll(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
@@ -100,7 +100,7 @@ export class PostsController {
     })
     @Get(':id')
     async findOne(@Param('id') id: string): Promise<PostEntity> {
-        return this.postsService.findOne(+id);
+        return this.postsService.findOne(parseInt(id));
     }
 
     @ApiOperation({ summary: 'Update Post' })
@@ -164,12 +164,12 @@ export class PostsController {
         @Param('id') id: string,
         @Res({ passthrough: true }) res: Response,
     ): Promise<StreamableFile> {
-        const image = await this.postsService.getImage(parseInt(id));
+        const imageBuffer = await this.postsService.getImage(parseInt(id));
         res.set({
             'Content-Type': 'image/jpeg',
             'Content-Disposition': 'attachment; filename="image.jpg"',
         });
-        return new StreamableFile(image.Body);
+        return new StreamableFile(imageBuffer);
     }
 
     @ApiOperation({ summary: 'Delete Post`s image' })

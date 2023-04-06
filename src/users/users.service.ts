@@ -14,6 +14,7 @@ import { UserEntity } from './user.entity';
 import { omit } from 'lodash';
 import { PostsService } from '../posts/posts.service';
 import { UserResponseDto } from './dto/user-response.dto';
+import { assign } from 'lodash';
 
 @Injectable()
 export class UsersService {
@@ -65,12 +66,11 @@ export class UsersService {
                 const salt = await bcrypt.genSalt();
                 data.password = await bcrypt.hash(data.password, salt);
             }
-            const updatedUser = Object.assign(user, data);
+            const updatedUser = assign(user, data);
             const createdUser = await this.usersRepo.save(updatedUser);
             return omit(createdUser, 'password');
         } catch (err) {
             if (err) {
-                console.log(err.driverError);
                 throw new BadRequestException('Can`t update user');
             }
         }
@@ -84,9 +84,7 @@ export class UsersService {
         try {
             if (user.posts.length) {
                 await Promise.all(
-                    user.posts.map(
-                        async (post) => await this.postsService.deletePost(post.id), // TODO
-                    ),
+                    user.posts.map(async (post) => await this.postsService.deletePost(post.id)),
                 );
             }
             const removedUser = await this.usersRepo.remove(user);

@@ -2,8 +2,8 @@ import { IsString, IsUrl } from 'class-validator';
 
 export class FileDto {
     @IsString()
-    objectKey: string;
+    key: string;
 
     @IsUrl()
-    preSignedUrl: string;
+    url: string;
 }

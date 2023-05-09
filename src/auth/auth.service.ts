@@ -34,8 +34,8 @@ export class AuthService {
         } as CreateUserDto);
         const sending = await this.sendEmail({
             email: createdUser.email,
-            subject: 'Signing Up To Post_Platform',
-            text: 'You have successfully signed up to Post_Platform app',
+            subject: 'Signing Up To Social_Media',
+            text: 'You have successfully signed up to Social Media app',
         });
         console.log('Sending : ', sending);
         return createdUser;
@@ -59,6 +59,7 @@ export class AuthService {
     private async sendEmail(emailData) {
         console.log('Sending Email');
         try {
+            console.log(emailData);
             await this.sendgridService.send({
                 to: emailData.email,
                 from: this.config.sendgrid.email,
@@ -68,7 +69,7 @@ export class AuthService {
             return 'Success';
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Email sending еррор');
+                throw new BadRequestException('Email sending Error');
             }
         }
     }

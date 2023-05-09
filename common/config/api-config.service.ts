@@ -17,7 +17,7 @@ export class ApiConfigService {
 
   sendgrid = {
     key: process.env.SENDGRID_API_KEY,
-    email: process.env.SENDGRID_EMAIL
+    email: "Email",//process.env.SENDGRID_EMAIL
   }
 
   AWS = {
@@ -27,6 +27,11 @@ export class ApiConfigService {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     expires: parseInt(process.env.AWS_EXPIRES),
     signatureVersion: process.env.AWS_SIGNATURE_VERSION
+  }
+
+  RMQ = {
+    url: process.env.RMQ_URL,
+    queue: process.env.RMQ_QUEUE
   }
 
   port: number = parseInt(process.env.API_PORT);

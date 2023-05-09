@@ -16,6 +16,7 @@ import { Order } from '../../common/enums/pagination.order';
 import { OrderCondition } from '../../common/enums/order.condition';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { assign } from 'lodash';
+import { FilesEntity } from '../files/files.entity';
 
 @Injectable()
 export class PostsService {
@@ -32,7 +33,7 @@ export class PostsService {
         let createFileDto: FileDto;
         if (file) {
             createFileDto = await this.filesService.uploadFile(file);
-            createPostDto.imageKey = createFileDto.objectKey;
+            createPostDto.imageKey = createFileDto.key;
         }
         try {
             const post = await this.postsRepo.create({ ...createPostDto, user: { id: user.id } });
@@ -59,7 +60,11 @@ export class PostsService {
     }
 
     async findOne(id: number) {
-        return await this.postsRepo.findOne({ where: { id } });
+        const post = await this.postsRepo.findOne({ where: { id } });
+        if (!post) {
+            throw new NotFoundException('Post not found');
+        }
+        return post;
     }
 
     async updatePost(
@@ -79,16 +84,18 @@ export class PostsService {
         if (currentUser.id !== post.user.id) {
             throw new ForbiddenException("You don't have the permissions");
         }
+        let updateFileDto: FileDto;
         if (file) {
             if (post.file) {
                 await this.filesService.deleteFile(post.file.key);
             }
-            const uploadResult = await this.filesService.uploadFile(file);
-            updatePostDto.imageKey = uploadResult.objectKey;
-            await this.filesService.createFile(uploadResult, post.id);
+            updateFileDto = await this.filesService.uploadFile(file);
+            updatePostDto.imageKey = updateFileDto.key;
         }
-        const updatedPost = assign(post, updatePostDto);
-        return this.postsRepo.save(updatedPost);
+        const updatePost = assign(post, updatePostDto);
+        const updatedPost = await this.postsRepo.save(updatePost);
+        await this.filesService.createFile(updateFileDto, updatedPost.id);
+        return updatedPost;
     }
 
     async deletePost(id: number): Promise<PostEntity> {
@@ -122,7 +129,7 @@ export class PostsService {
         return this.filesService.downloadFile(post.file.key);
     }
 
-    async deleteImage(id: number, currentUser: UserEntity) {
+    async deleteImage(id: number, currentUser: UserEntity): Promise<FilesEntity> {
         const post = await this.postsRepo.findOne({ where: { id }, relations: ['file', 'user'] });
         if (!post) {
             throw new NotFoundException('Post not found');

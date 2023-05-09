@@ -3,7 +3,6 @@ import {
     ForbiddenException,
     Injectable,
     NotFoundException,
-    UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -29,6 +28,7 @@ export class UsersService {
     }
 
     async findAll(email?: string): Promise<UserResponseDto[]> {
+        console.log(process.env.NODE_ENV);
         let users: UserEntity[];
         if (email) {
             users = await this.usersRepo.find({ where: { email: email.toLowerCase() } });
@@ -50,10 +50,11 @@ export class UsersService {
         return omit(user, 'password');
     }
 
-    async update(id: number, data: UpdateUserDto, currentUser): Promise<UserResponseDto> {
-        if (!currentUser) {
-            throw new UnauthorizedException();
-        }
+    async update(
+        id: number,
+        data: UpdateUserDto,
+        currentUser: UserEntity,
+    ): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id } });
         if (!user) {
             throw new NotFoundException('User not found');
@@ -91,7 +92,6 @@ export class UsersService {
             return omit(removedUser, 'password');
         } catch (err) {
             if (err) {
-                console.log(err.driverError);
                 throw new BadRequestException('Can`t delete user');
             }
         }

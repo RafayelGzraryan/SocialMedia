@@ -59,7 +59,6 @@ export class AuthService {
     private async sendEmail(emailData) {
         console.log('Sending Email');
         try {
-            console.log(emailData);
             await this.sendgridService.send({
                 to: emailData.email,
                 from: this.config.sendgrid.email,

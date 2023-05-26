@@ -17,7 +17,7 @@ export class ApiConfigService {
 
   sendgrid = {
     key: process.env.SENDGRID_API_KEY,
-    email: "Email",//process.env.SENDGRID_EMAIL
+    email: process.env.SENDGRID_EMAIL
   }
 
   AWS = {

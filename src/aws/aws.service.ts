@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UploadURLDto } from './dto/upload-URL.dto';
 import { S3 } from 'aws-sdk';
 import { ApiConfigService } from '../../common/config/api-config.service';
+import { FailedToGetPresignedUrlException } from "../../common/exceptions/aws/failed-to-get-presigned-url.exception";
 
 @Injectable()
 export class AwsService {
@@ -29,7 +30,7 @@ export class AwsService {
             return s3.getSignedUrlPromise(action, params);
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Failed to get presigned url');
+                throw new FailedToGetPresignedUrlException('Failed to get presigned url');
             }
         }
     }

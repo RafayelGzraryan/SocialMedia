@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
@@ -9,6 +9,13 @@ import { ApiConfigService } from '../../common/config/api-config.service';
 import { FILE_SERVICE } from '../../common/constants/rmq-constants';
 import { FileDto } from './dto/file.dto';
 import { firstValueFrom } from 'rxjs';
+import {
+    ImageNotFoundException,
+    FailedToCreateFileException,
+    FailedToUploadImageException,
+    FailedToDownloadImageException,
+    FailedToDeleteImageException
+} from "../../common/exceptions";
 
 @Injectable()
 export class FilesService {
@@ -29,7 +36,7 @@ export class FilesService {
             return this.filesRepo.save(newFile);
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Filed to create file in file repository');
+                throw new FailedToCreateFileException('Filed to create file in file repository');
             }
         }
     }
@@ -50,7 +57,7 @@ export class FilesService {
             };
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Failed to upload image');
+                throw new FailedToUploadImageException('Failed to upload image');
             }
         }
     }
@@ -66,7 +73,7 @@ export class FilesService {
             return Buffer.from(axiosResponse.data, 'binary');
         } catch (err) {
             if (err) {
-                throw new BadRequestException(`Filed to download image`);
+                throw new FailedToDownloadImageException(`Filed to download image`);
             }
         }
     }
@@ -74,7 +81,7 @@ export class FilesService {
     async deleteFile(key: string): Promise<FilesEntity> {
         const file = await this.filesRepo.findOne({ where: { key } });
         if (!file) {
-            throw new NotFoundException('Image not found');
+            throw new ImageNotFoundException('Image not found');
         }
         try {
             const preSignedUrl = await firstValueFrom(
@@ -84,7 +91,7 @@ export class FilesService {
             return this.filesRepo.remove(file);
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Filed to delete image');
+                throw new FailedToDeleteImageException('Filed to delete image');
             }
         }
     }

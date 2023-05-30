@@ -1,8 +1,5 @@
 import {
-    BadRequestException,
-    ForbiddenException,
     Injectable,
-    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +11,12 @@ import { omit } from 'lodash';
 import { PostsService } from '../posts/posts.service';
 import { UserResponseDto } from './dto/user-response.dto';
 import { assign } from 'lodash';
+import {
+    UserNotFoundException,
+    FailedToUpdateUserException,
+    NoPermissionException,
+    FailedToDeleteUserException
+} from "../../common/exceptions";
 
 @Injectable()
 export class UsersService {
@@ -28,7 +31,6 @@ export class UsersService {
     }
 
     async findAll(email?: string): Promise<UserResponseDto[]> {
-        console.log(process.env.NODE_ENV);
         let users: UserEntity[];
         if (email) {
             users = await this.usersRepo.find({ where: { email: email.toLowerCase() } });
@@ -45,7 +47,7 @@ export class UsersService {
     async findOne(id: number): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id } });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         return omit(user, 'password');
     }
@@ -57,10 +59,10 @@ export class UsersService {
     ): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id } });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         if (currentUser.id !== user.id) {
-            throw new ForbiddenException('You have not permissions');
+            throw new NoPermissionException('You do have not permissions');
         }
         try {
             if (data.password) {
@@ -72,7 +74,7 @@ export class UsersService {
             return omit(createdUser, 'password');
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Can`t update user');
+                throw new FailedToUpdateUserException('Can`t update user');
             }
         }
     }
@@ -80,7 +82,7 @@ export class UsersService {
     async remove(id: number): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id }, relations: ['posts'] });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         try {
             if (user.posts.length) {
@@ -92,7 +94,7 @@ export class UsersService {
             return omit(removedUser, 'password');
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Can`t delete user');
+                throw new FailedToDeleteUserException('Failed to delete user');
             }
         }
     }

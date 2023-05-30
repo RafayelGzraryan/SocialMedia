@@ -12,7 +12,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { assign, omit } from 'lodash';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Role } from '../../common/enums/users.role';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {ImageNotFoundException, NoPermissionException, PostNotFoundException} from "../../common/exceptions";
 
 describe('PostsService', () => {
     let service: PostsService;
@@ -83,7 +83,7 @@ describe('PostsService', () => {
 
     it('Should throw an error if the post by given id not found', async () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => null);
-        await expect(service.findOne(1)).rejects.toThrowError(NotFoundException);
+        await expect(service.findOne(1)).rejects.toThrowError(PostNotFoundException);
     });
 
     it('Should update the post by provided dto', async () => {
@@ -108,7 +108,7 @@ describe('PostsService', () => {
         const postDto = { test: 'test' } as UpdatePostDto;
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => null);
         await expect(service.updatePost(1, postDto, mockUser)).rejects.toThrowError(
-            NotFoundException,
+            PostNotFoundException,
         );
     });
 
@@ -118,7 +118,7 @@ describe('PostsService', () => {
             Promise.resolve(assign({ ...mockPost }, { user: { id: 2 } })),
         );
         await expect(service.updatePost(1, postDto, mockUser)).rejects.toThrowError(
-            ForbiddenException,
+            NoPermissionException,
         );
     });
 
@@ -134,7 +134,7 @@ describe('PostsService', () => {
 
     it('Should throw an error if deleted post not found', async () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => null);
-        await expect(service.deletePost(1)).rejects.toThrowError(NotFoundException);
+        await expect(service.deletePost(1)).rejects.toThrowError(PostNotFoundException);
     });
 
     it('Should publish the post by given id', async () => {
@@ -165,12 +165,12 @@ describe('PostsService', () => {
 
     it('GetImage Should throw an error if the post by given id not found', async () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => null);
-        await expect(service.getImage(1)).rejects.toThrowError(NotFoundException);
+        await expect(service.getImage(1)).rejects.toThrowError(PostNotFoundException);
     });
 
     it('GetImage should throw an error if the post has not an image', async () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => Promise.resolve(mockPost));
-        await expect(service.getImage(1)).rejects.toThrowError(NotFoundException);
+        await expect(service.getImage(1)).rejects.toThrowError(ImageNotFoundException);
     });
 
     it('Should delete the post image by given id', async () => {
@@ -189,12 +189,12 @@ describe('PostsService', () => {
 
     it('DeleteImage should throw an error if the post by given id not found', async () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => null);
-        await expect(service.deleteImage(1, mockUser)).rejects.toThrowError(NotFoundException);
+        await expect(service.deleteImage(1, mockUser)).rejects.toThrowError(PostNotFoundException);
     });
 
     it('DeleteImage should throw an error if the post has not an image', async () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() => Promise.resolve(mockPost));
-        await expect(service.deleteImage(1, mockUser)).rejects.toThrowError(NotFoundException);
+        await expect(service.deleteImage(1, mockUser)).rejects.toThrowError(ImageNotFoundException);
     });
 
     it('DeleteImage should throw an error if authorized user has not permissions', async () => {
@@ -202,6 +202,6 @@ describe('PostsService', () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() =>
             Promise.resolve(assign({ ...mockPost }, { file }, { user: { ...mockUser } })),
         );
-        await expect(service.deleteImage(1, currentUser)).rejects.toThrowError(ForbiddenException);
+        await expect(service.deleteImage(1, currentUser)).rejects.toThrowError(NoPermissionException);
     });
 });

@@ -13,6 +13,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { mockUser } from '../../common/test/mock.data';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SignInDto } from './dto/sign-in.dto';
+import {InvalidPasswordException, UserAlreadyExistException, UserNotFoundException} from "../../common/exceptions";
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -96,7 +97,7 @@ describe('AuthService', () => {
         jest.spyOn(mockUsersService, 'findByEmail').mockImplementation(() =>
             Promise.resolve(mockUser),
         );
-        await expect(service.signUp(signUpDto)).rejects.toThrowError(BadRequestException);
+        await expect(service.signUp(signUpDto)).rejects.toThrowError(UserAlreadyExistException);
     });
 
     it('Should return the access_token then the user signed in', async () => {
@@ -114,7 +115,7 @@ describe('AuthService', () => {
     it('Should throw an error then the user sign`s in with non existing email', async () => {
         const signInDto = { email: 'test@test.com', password: 'password' } as SignUpDto;
         jest.spyOn(mockUsersService, 'findByEmail').mockImplementation(() => null);
-        await expect(service.signIn(signInDto)).rejects.toThrowError(NotFoundException);
+        await expect(service.signIn(signInDto)).rejects.toThrowError(UserNotFoundException);
     });
 
     it('Should throw an error then the user sign`s in with incorrect password', async () => {
@@ -123,6 +124,6 @@ describe('AuthService', () => {
             Promise.resolve(mockUser),
         );
         jest.spyOn(bcrypt, 'compare').mockImplementation(() => false);
-        await expect(service.signIn(signInDto)).rejects.toThrowError(BadRequestException);
+        await expect(service.signIn(signInDto)).rejects.toThrowError(InvalidPasswordException);
     });
 });

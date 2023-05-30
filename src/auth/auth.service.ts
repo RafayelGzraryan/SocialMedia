@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -9,6 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 import { TokenDto } from './dto/token.dto';
 import { ApiConfigService } from '../../common/config/api-config.service';
 import { SendgridService } from './sendgrid.service';
+import {
+    UserNotFoundException,
+    FailedToSendEmailException,
+    UserAlreadyExistException,
+    InvalidPasswordException
+} from "../../common/exceptions";
 
 @Injectable()
 export class AuthService {
@@ -22,7 +28,7 @@ export class AuthService {
     async signUp(data: SignUpDto): Promise<UserEntity> {
         const user = await this.usersService.findByEmail(data.email);
         if (user) {
-            throw new BadRequestException('User with this email already exists');
+            throw new UserAlreadyExistException('User with this email already exists');
         }
         const salt = await bcrypt.genSalt();
         const password = await bcrypt.hash(data.password, salt);
@@ -44,11 +50,11 @@ export class AuthService {
     async signIn(data: SignInDto): Promise<TokenDto> {
         const user = await this.usersService.findByEmail(data.email);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         const isMatch = await bcrypt.compare(data.password, user.password);
         if (!isMatch) {
-            throw new BadRequestException('Password incorrect');
+            throw new InvalidPasswordException('Password incorrect');
         }
         const payload = { id: user.id, email: user.email, role: user.role };
         return {
@@ -68,7 +74,7 @@ export class AuthService {
             return 'Success';
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Email sending Error');
+                throw new FailedToSendEmailException('Failed to send email');
             }
         }
     }

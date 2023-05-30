@@ -1,8 +1,5 @@
 import {
-    BadRequestException,
-    ForbiddenException,
     Injectable,
-    NotFoundException,
 } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,6 +14,14 @@ import { OrderCondition } from '../../common/enums/order.condition';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { assign } from 'lodash';
 import { FilesEntity } from '../files/files.entity';
+import {
+    PostNotFoundException,
+    ImageNotFoundException,
+    NoPermissionException,
+    FailedToCreatePostException,
+    FailedToUpdatePostException,
+    FailedToDeletePostException
+} from "../../common/exceptions";
 
 @Injectable()
 export class PostsService {
@@ -44,7 +49,7 @@ export class PostsService {
             return createdPost;
         } catch (err) {
             if (err) {
-                throw new BadRequestException('Failed to create post');
+                throw new FailedToCreatePostException('Failed to create post');
             }
         }
     }
@@ -62,7 +67,7 @@ export class PostsService {
     async findOne(id: number) {
         const post = await this.postsRepo.findOne({ where: { id } });
         if (!post) {
-            throw new NotFoundException('Post not found');
+            throw new PostNotFoundException('Post not found');
         }
         return post;
     }
@@ -79,10 +84,10 @@ export class PostsService {
             relations: ['file', 'user'],
         });
         if (!post) {
-            throw new NotFoundException('Post not found');
+            throw new PostNotFoundException('Post not found');
         }
         if (currentUser.id !== post.user.id) {
-            throw new ForbiddenException("You don't have the permissions");
+            throw new NoPermissionException("You don't have the permissions");
         }
         let updateFileDto: FileDto;
         if (file) {
@@ -92,27 +97,36 @@ export class PostsService {
             updateFileDto = await this.filesService.uploadFile(file);
             updatePostDto.imageKey = updateFileDto.key;
         }
-        const updatePost = assign(post, updatePostDto);
-        const updatedPost = await this.postsRepo.save(updatePost);
-        await this.filesService.createFile(updateFileDto, updatedPost.id);
-        return updatedPost;
+        try {
+            const updatePost = assign(post, updatePostDto);
+            const updatedPost = await this.postsRepo.save(updatePost);
+            await this.filesService.createFile(updateFileDto, updatedPost.id);
+            return updatedPost;
+        } catch (err) {
+            throw new FailedToUpdatePostException("Failed to update post")
+        }
     }
 
     async deletePost(id: number): Promise<PostEntity> {
         const post = await this.postsRepo.findOne({ where: { id } });
         if (!post) {
-            throw new NotFoundException('Post not found');
+            throw new PostNotFoundException('Post not found');
         }
         if (post.imageKey) {
             await this.filesService.deleteFile(post.imageKey);
         }
-        return this.postsRepo.remove(post);
+        try {
+            return await this.postsRepo.remove(post);
+        } catch (err) {
+            throw new FailedToDeletePostException("failed to delete post")
+        }
+
     }
 
     async publish(id: number): Promise<PostEntity> {
         const post = await this.postsRepo.findOne({ where: { id } });
         if (!post) {
-            throw new NotFoundException('Post not found');
+            throw new PostNotFoundException('Post not found');
         }
         post.published = true;
         return this.postsRepo.save(post);
@@ -121,10 +135,10 @@ export class PostsService {
     async getImage(id: number): Promise<Buffer> {
         const post = await this.postsRepo.findOne({ where: { id }, relations: ['file'] });
         if (!post) {
-            throw new NotFoundException('Post not found');
+            throw new PostNotFoundException('Post not found');
         }
         if (!post.file) {
-            throw new NotFoundException('There is no image in this post');
+            throw new ImageNotFoundException('There is no image in this post');
         }
         return this.filesService.downloadFile(post.file.key);
     }
@@ -132,13 +146,13 @@ export class PostsService {
     async deleteImage(id: number, currentUser: UserEntity): Promise<FilesEntity> {
         const post = await this.postsRepo.findOne({ where: { id }, relations: ['file', 'user'] });
         if (!post) {
-            throw new NotFoundException('Post not found');
+            throw new PostNotFoundException('Post not found');
         }
         if (currentUser.role !== 'admin' && currentUser.id !== post.user.id) {
-            throw new ForbiddenException("You don't have the permissions");
+            throw new NoPermissionException("You don't have the permissions");
         }
         if (!post.file) {
-            throw new NotFoundException('There is no image to delete');
+            throw new ImageNotFoundException('There is no image to delete');
         }
         post.imageKey = null;
         await this.postsRepo.save(post);

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -13,11 +13,12 @@ import {
     UserNotFoundException,
     FailedToSendEmailException,
     UserAlreadyExistException,
-    InvalidPasswordException
-} from "../../common/exceptions";
+    InvalidPasswordException,
+} from '../../common/exceptions';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
@@ -38,12 +39,12 @@ export class AuthService {
             email,
             password,
         } as CreateUserDto);
-        const sending = await this.sendEmail({
+        const sendResult = await this.sendEmail({
             email: createdUser.email,
             subject: 'Signing Up To Social_Media',
             text: 'You have successfully signed up to Social Media app',
         });
-        console.log('Sending : ', sending);
+        this.logger.log('Sending : ', sendResult);
         return createdUser;
     }
 
@@ -63,7 +64,7 @@ export class AuthService {
     }
 
     private async sendEmail(emailData) {
-        console.log('Sending Email');
+        this.logger.log('Sending Email');
         try {
             await this.sendgridService.send({
                 to: emailData.email,
@@ -73,9 +74,8 @@ export class AuthService {
             });
             return 'Success';
         } catch (err) {
-            if (err) {
-                throw new FailedToSendEmailException('Failed to send email');
-            }
+            this.logger.error(err.message);
+            throw new FailedToSendEmailException('Failed to send email');
         }
     }
 }

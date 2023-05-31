@@ -1,6 +1,4 @@
-import {
-    Injectable,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostEntity } from './post.entity';
@@ -20,11 +18,12 @@ import {
     NoPermissionException,
     FailedToCreatePostException,
     FailedToUpdatePostException,
-    FailedToDeletePostException
-} from "../../common/exceptions";
+    FailedToDeletePostException,
+} from '../../common/exceptions';
 
 @Injectable()
 export class PostsService {
+    private readonly logger = new Logger(PostsService.name);
     constructor(
         @InjectRepository(PostEntity) private postsRepo: Repository<PostEntity>,
         private filesService: FilesService,
@@ -48,9 +47,8 @@ export class PostsService {
             }
             return createdPost;
         } catch (err) {
-            if (err) {
-                throw new FailedToCreatePostException('Failed to create post');
-            }
+            this.logger.error(err.messages);
+            throw new FailedToCreatePostException('Failed to create post');
         }
     }
 
@@ -103,7 +101,8 @@ export class PostsService {
             await this.filesService.createFile(updateFileDto, updatedPost.id);
             return updatedPost;
         } catch (err) {
-            throw new FailedToUpdatePostException("Failed to update post")
+            this.logger.error(err.messages);
+            throw new FailedToUpdatePostException('Failed to update post');
         }
     }
 
@@ -118,9 +117,9 @@ export class PostsService {
         try {
             return await this.postsRepo.remove(post);
         } catch (err) {
-            throw new FailedToDeletePostException("failed to delete post")
+            this.logger.error(err.messages);
+            throw new FailedToDeletePostException('failed to delete post');
         }
-
     }
 
     async publish(id: number): Promise<PostEntity> {

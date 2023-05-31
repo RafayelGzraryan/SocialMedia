@@ -8,7 +8,7 @@ import { Role } from '../../common/enums/users.role';
 import { PostsService } from '../posts/posts.service';
 import { PostEntity } from '../posts/post.entity';
 import { mockUser } from '../../common/test/mock.data';
-import { NoPermissionException, UserNotFoundException } from "../../common/exceptions";
+import { NoPermissionException, UserNotFoundException } from '../../common/exceptions';
 
 describe('UsersService', () => {
     let service: UsersService;
@@ -119,7 +119,9 @@ describe('UsersService', () => {
             role: Role.Admin,
         } as UserEntity;
         jest.spyOn(mockUsersRepo, 'findOne').mockImplementation(() => null);
-        await expect(service.update(1, newUser, mockUser)).rejects.toThrowError(UserNotFoundException);
+        await expect(service.update(1, newUser, mockUser)).rejects.toThrowError(
+            UserNotFoundException,
+        );
     });
 
     it('Update should throw an Error if authorised user has not permissions', async () => {

@@ -12,7 +12,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { assign, omit } from 'lodash';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Role } from '../../common/enums/users.role';
-import {ImageNotFoundException, NoPermissionException, PostNotFoundException} from "../../common/exceptions";
+import {
+    ImageNotFoundException,
+    NoPermissionException,
+    PostNotFoundException,
+} from '../../common/exceptions';
 
 describe('PostsService', () => {
     let service: PostsService;
@@ -202,6 +206,8 @@ describe('PostsService', () => {
         jest.spyOn(mockPostsRepo, 'findOne').mockImplementation(() =>
             Promise.resolve(assign({ ...mockPost }, { file }, { user: { ...mockUser } })),
         );
-        await expect(service.deleteImage(1, currentUser)).rejects.toThrowError(NoPermissionException);
+        await expect(service.deleteImage(1, currentUser)).rejects.toThrowError(
+            NoPermissionException,
+        );
     });
 });

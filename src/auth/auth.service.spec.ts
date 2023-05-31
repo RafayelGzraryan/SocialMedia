@@ -11,9 +11,12 @@ import { ApiConfigService } from '../../common/config/api-config.service';
 import { ClientResponse } from '@sendgrid/client/src/response';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { mockUser } from '../../common/test/mock.data';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SignInDto } from './dto/sign-in.dto';
-import {InvalidPasswordException, UserAlreadyExistException, UserNotFoundException} from "../../common/exceptions";
+import {
+    InvalidPasswordException,
+    UserAlreadyExistException,
+    UserNotFoundException,
+} from '../../common/exceptions';
 
 describe('AuthService', () => {
     let service: AuthService;

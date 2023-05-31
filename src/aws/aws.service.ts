@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UploadURLDto } from './dto/upload-URL.dto';
 import { S3 } from 'aws-sdk';
 import { ApiConfigService } from '../../common/config/api-config.service';
-import { FailedToGetPresignedUrlException } from "../../common/exceptions/aws/failed-to-get-presigned-url.exception";
+import { FailedToGetPresignedUrlException } from '../../common/exceptions';
 
 @Injectable()
 export class AwsService {
+    private readonly logger = new Logger(AwsService.name);
     bucketName = this.configService.AWS.bucketName;
     constructor(private readonly configService: ApiConfigService) {}
 
@@ -27,11 +28,10 @@ export class AwsService {
                 region: this.configService.AWS.region,
                 signatureVersion: this.configService.AWS.signatureVersion,
             });
-            return s3.getSignedUrlPromise(action, params);
+            return await s3.getSignedUrlPromise(action, params);
         } catch (err) {
-            if (err) {
-                throw new FailedToGetPresignedUrlException('Failed to get presigned url');
-            }
+            this.logger.error(err.message);
+            throw new FailedToGetPresignedUrlException('Failed to get presigned url');
         }
     }
 

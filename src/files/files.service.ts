@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
@@ -14,11 +14,12 @@ import {
     FailedToCreateFileException,
     FailedToUploadImageException,
     FailedToDownloadImageException,
-    FailedToDeleteImageException
-} from "../../common/exceptions";
+    FailedToDeleteImageException,
+} from '../../common/exceptions';
 
 @Injectable()
 export class FilesService {
+    private readonly logger = new Logger(FilesService.name);
     constructor(
         @InjectRepository(FilesEntity)
         private filesRepo: Repository<FilesEntity>,
@@ -33,11 +34,10 @@ export class FilesService {
                 url: createFileDto.url,
                 post: { id: postId },
             });
-            return this.filesRepo.save(newFile);
+            return await this.filesRepo.save(newFile);
         } catch (err) {
-            if (err) {
-                throw new FailedToCreateFileException('Filed to create file in file repository');
-            }
+            this.logger.error(err.message);
+            throw new FailedToCreateFileException('Filed to create file in file repository');
         }
     }
 
@@ -56,9 +56,8 @@ export class FilesService {
                 url: preSignedUrl,
             };
         } catch (err) {
-            if (err) {
-                throw new FailedToUploadImageException('Failed to upload image');
-            }
+            this.logger.error(err.message);
+            throw new FailedToUploadImageException('Failed to upload image');
         }
     }
 
@@ -72,9 +71,8 @@ export class FilesService {
             });
             return Buffer.from(axiosResponse.data, 'binary');
         } catch (err) {
-            if (err) {
-                throw new FailedToDownloadImageException(`Filed to download image`);
-            }
+            this.logger.error(err.message);
+            throw new FailedToDownloadImageException(`Filed to download image`);
         }
     }
 
@@ -88,11 +86,10 @@ export class FilesService {
                 this.fileClient.send({ cmd: 'get_deleteUrl' }, key),
             );
             await axios.delete(preSignedUrl);
-            return this.filesRepo.remove(file);
+            return await this.filesRepo.remove(file);
         } catch (err) {
-            if (err) {
-                throw new FailedToDeleteImageException('Filed to delete image');
-            }
+            this.logger.error(err.message);
+            throw new FailedToDeleteImageException('Filed to delete image');
         }
     }
 }

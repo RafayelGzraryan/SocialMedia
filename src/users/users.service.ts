@@ -1,6 +1,4 @@
-import {
-    Injectable,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -15,11 +13,12 @@ import {
     UserNotFoundException,
     FailedToUpdateUserException,
     NoPermissionException,
-    FailedToDeleteUserException
-} from "../../common/exceptions";
+    FailedToDeleteUserException,
+} from '../../common/exceptions';
 
 @Injectable()
 export class UsersService {
+    private readonly logger = new Logger(UsersService.name);
     constructor(
         @InjectRepository(UserEntity) private usersRepo: Repository<UserEntity>,
         private postsService: PostsService,
@@ -73,9 +72,8 @@ export class UsersService {
             const createdUser = await this.usersRepo.save(updatedUser);
             return omit(createdUser, 'password');
         } catch (err) {
-            if (err) {
-                throw new FailedToUpdateUserException('Can`t update user');
-            }
+            this.logger.error(err.message);
+            throw new FailedToUpdateUserException('Can`t update user');
         }
     }
 
@@ -93,9 +91,8 @@ export class UsersService {
             const removedUser = await this.usersRepo.remove(user);
             return omit(removedUser, 'password');
         } catch (err) {
-            if (err) {
-                throw new FailedToDeleteUserException('Failed to delete user');
-            }
+            this.logger.error(err.message);
+            throw new FailedToDeleteUserException('Failed to delete user');
         }
     }
 }

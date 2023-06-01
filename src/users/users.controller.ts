@@ -6,7 +6,6 @@ import {
     Param,
     Patch,
     Query,
-    Req,
     UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
@@ -87,12 +86,12 @@ export class UsersController {
         description: 'Update User Fields',
     })
     @Patch(':id')
-    update(
+    updateUser(
         @Param('id') id: string,
         @Body() updateUserDto: UpdateUserDto,
-        @Req() req,
+        @CurrentUser() currentUser: UserEntity,
     ): Promise<UserResponseDto> {
-        return this.usersService.update(parseInt(id), updateUserDto, req.user);
+        return this.usersService.update(parseInt(id), updateUserDto, currentUser);
     }
 
     @ApiOperation({ summary: 'Delete User' })
@@ -106,7 +105,7 @@ export class UsersController {
     })
     @UserRoles(Role.Admin)
     @Delete(':id')
-    remove(@Param('id') id: string): Promise<UserResponseDto> {
+    removeUser(@Param('id') id: string): Promise<UserResponseDto> {
         return this.usersService.remove(parseInt(id));
     }
 }

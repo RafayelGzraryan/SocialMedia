@@ -1,10 +1,4 @@
-import {
-    BadRequestException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -14,9 +8,17 @@ import { UserEntity } from './user.entity';
 import { omit } from 'lodash';
 import { PostsService } from '../posts/posts.service';
 import { UserResponseDto } from './dto/user-response.dto';
+import { assign } from 'lodash';
+import {
+    UserNotFoundException,
+    FailedToUpdateUserException,
+    NoPermissionException,
+    FailedToDeleteUserException,
+} from '../../common/exceptions';
 
 @Injectable()
 export class UsersService {
+    private readonly logger = new Logger(UsersService.name);
     constructor(
         @InjectRepository(UserEntity) private usersRepo: Repository<UserEntity>,
         private postsService: PostsService,
@@ -44,58 +46,53 @@ export class UsersService {
     async findOne(id: number): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id } });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         return omit(user, 'password');
     }
 
-    async update(id: number, data: UpdateUserDto, currentUser): Promise<UserResponseDto> {
-        if (!currentUser) {
-            throw new UnauthorizedException();
-        }
+    async update(
+        id: number,
+        data: UpdateUserDto,
+        currentUser: UserEntity,
+    ): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id } });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         if (currentUser.id !== user.id) {
-            throw new ForbiddenException('You have not permissions');
+            throw new NoPermissionException('You do have not permissions');
         }
         try {
             if (data.password) {
                 const salt = await bcrypt.genSalt();
                 data.password = await bcrypt.hash(data.password, salt);
             }
-            const updatedUser = Object.assign(user, data);
+            const updatedUser = assign(user, data);
             const createdUser = await this.usersRepo.save(updatedUser);
             return omit(createdUser, 'password');
         } catch (err) {
-            if (err) {
-                console.log(err.driverError);
-                throw new BadRequestException('Can`t update user');
-            }
+            this.logger.error(err.message);
+            throw new FailedToUpdateUserException('Can`t update user');
         }
     }
 
     async remove(id: number): Promise<UserResponseDto> {
         const user = await this.usersRepo.findOne({ where: { id }, relations: ['posts'] });
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new UserNotFoundException('User not found');
         }
         try {
             if (user.posts.length) {
                 await Promise.all(
-                    user.posts.map(
-                        async (post) => await this.postsService.deletePost(post.id), // TODO
-                    ),
+                    user.posts.map(async (post) => await this.postsService.deletePost(post.id)),
                 );
             }
             const removedUser = await this.usersRepo.remove(user);
             return omit(removedUser, 'password');
         } catch (err) {
-            if (err) {
-                console.log(err.driverError);
-                throw new BadRequestException('Can`t delete user');
-            }
+            this.logger.error(err.message);
+            throw new FailedToDeleteUserException('Failed to delete user');
         }
     }
 }

@@ -1,5 +1,5 @@
 import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePostDto {
     @ApiProperty()
@@ -7,7 +7,7 @@ export class CreatePostDto {
     @MaxLength(200)
     text: string;
 
-    @ApiProperty({ required: false })
+    @ApiPropertyOptional()
     @IsString()
     @MaxLength(2000)
     @IsOptional()

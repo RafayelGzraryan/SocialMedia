@@ -1,20 +1,29 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { config } from 'aws-sdk';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { setupSwagger } from '../common/swagger/swagger.option';
 import { ApiConfigService } from '../common/config/api-config.service';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const configService = await app.get(ApiConfigService);
+    const logger: Logger = new Logger('main');
     app.useGlobalPipes(new ValidationPipe());
     setupSwagger(app, configService);
-    config.update({
-        accessKeyId: configService.AWS.accessKeyId,
-        secretAccessKey: configService.AWS.secretAccessKey,
-        region: configService.AWS.region,
+    await app.connectMicroservice<MicroserviceOptions>({
+        transport: Transport.RMQ,
+        options: {
+            urls: [configService.RMQ.url],
+            queue: configService.RMQ.queue,
+            queueOptions: {
+                durable: false,
+            },
+        },
     });
-    await app.listen(configService.port);
+    await app.startAllMicroservices();
+    await app.listen(configService.port, () => {
+        logger.log(`Server is successfully running on port: ${configService.port}`);
+    });
 }
 bootstrap();
